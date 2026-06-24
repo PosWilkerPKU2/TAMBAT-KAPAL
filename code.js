@@ -1,7 +1,7 @@
 /**
  * Frontend Logic (code.js) - GitHub Deployment Version
  * Pemantauan Tambat Kapal - KSOP Kelas II Pekanbaru
- * * UI/UX Versi Terpisah, Kontras Tinggi, Multi-Form Zebra Striping, & Integrated Excel Export Engine
+ * * UI/UX Versi Terpisah, Kontras Tinggi, Multi-Form Zebra Striping, & Direct Download Engine [Evaluasi Terpadu V3]
  */
 
 // !!! GANTI URL INI DENGAN WEB APP URL HASIL DEPLOY APPS SCRIPT ANDA !!!
@@ -253,9 +253,7 @@ async function submitFormData(e) {
       gt: card.querySelector(".inp-gt").value,
       bendera: card.querySelector(".inp-bendera").value.toUpperCase(),
       keagenan: card.querySelector(".inp-keagenan").value.toUpperCase(),
-      daerahPelayaran: card.querySelector(
-        `input[name="pelayaran-${idx}"]:checked`,
-      ).value,
+      daerahPelayaran: card.querySelector(`input[name="pelayaran-${idx}"]:checked`).value,
       posisi: card.querySelector(".inp-posisi").value.toUpperCase(),
       kodeBilling: card.querySelector(".inp-billing").value.toUpperCase(),
       tanggalMulai: card.querySelector(".inp-tgl-mulai").value,
@@ -330,8 +328,7 @@ function loadDataGrid() {
       document.getElementById("stat-total").innerText = res.stats.total;
       document.getElementById("stat-dn").innerText = res.stats.dn;
       document.getElementById("stat-ln").innerText = res.stats.ln;
-      document.getElementById("stat-jam").innerText =
-        res.stats.totalJamBulanIni + " Jam";
+      document.getElementById("stat-jam").innerText = res.stats.totalJamBulanIni + " Jam";
 
       currentPage = 1;
       renderTableData();
@@ -343,16 +340,14 @@ function loadDataGrid() {
 
 // Mesin Pencari dan Penyaring Multi-Kombinasi Realtime (Tanpa Tombol)
 function triggerSearchFilter() {
-  const searchQuery = document
-    .getElementById("search-input")
-    .value.toLowerCase()
-    .trim();
+  const searchQuery = document.getElementById("search-input").value.toLowerCase().trim();
   const filterBulan = document.getElementById("filter-bulan").value;
   const filterTahun = document.getElementById("filter-tahun").value;
 
   globalFilteredRecords = globalAllRecords.filter((r) => {
-    if (filterBulan && r["BULAN"] !== filterBulan) return false;
-    if (filterTahun && r["TAHUN"] !== filterTahun) return false;
+    // Evaluasi Poin 3: Pastikan tipe data dicast murni string (.toString().trim()) agar filter tahun 2026 berfungsi maksimal
+    if (filterBulan && String(r["BULAN"]).toUpperCase() !== filterBulan.toUpperCase()) return false;
+    if (filterTahun && String(r["TAHUN"]).trim() !== filterTahun.trim()) return false;
 
     if (searchQuery) {
       return (
@@ -394,6 +389,7 @@ function renderTableData() {
       billCell = `<a href="${r["LINK FILE BILLING"]}" target="_blank" class="bill-link"><i class="fa-solid fa-file-pdf text-danger"></i> ${r["KODE BILLING"]}</a>`;
     }
 
+    // Evaluasi Poin 1 & 2: Pemanggilan properti jam bersih dari petik murni server, dan merubah pemanggilan total jam dari r["TOTAL JAM"]
     tr.innerHTML = `
       <td style="font-weight:700; color:var(--navy);">${r["ID"].split("-")[1] || r["ID"]}</td>
       <td style="font-weight:600; color:var(--navy);">${r["NAMA KAPAL"]}</td>
@@ -401,9 +397,9 @@ function renderTableData() {
       <td>${r["BENDERA"]}</td>
       <td>${r["KEAGENAN"]}</td>
       <td><span style="padding:4px 8px; border-radius:4px; color:white; font-size:11px; background:${r["DAERAH PELAYARAN"] === "Luar Negeri" ? "#ff4757" : "#2ed573"}">${r["DAERAH PELAYARAN"]}</span></td>
-      <td>${r["TANGGAL MULAI TAMBAT"]}<br><small style="color:#777">${r["JAM MULAI TAMBAT"]}</small></td>
+      <td>${r["TANGGAL MULAI TAMBAT"]}<br><small style="color:#777">${String(r["JAM MULAI TAMBAT"]).replace("'", "")}</small></td>
       <td style="font-weight:700; color:${r["PARAF MULAI"] === "YA" ? "#2ed573" : "#ff4757"}">${r["PARAF MULAI"]}</td>
-      <td>${r["TANGGAL SELESAI TAMBAT"]}<br><small style="color:#777">${r["JAM SELESAI TAMBAT"]}</small></td>
+      <td>${r["TANGGAL SELESAI TAMBAT"]}<br><small style="color:#777">${String(r["JAM SELESAI TAMBAT"]).replace("'", "")}</small></td>
       <td style="font-weight:700; color:${r["PARAF SELESAI"] === "YA" ? "#2ed573" : "#ff4757"}">${r["PARAF SELESAI"]}</td>
       <td><strong>${r["POSISI"]}</strong></td>
       <td style="color:var(--navy); font-weight:700;">${r["TOTAL JAM"]}</td>
@@ -489,7 +485,6 @@ async function exportFilteredData() {
   loaderText.innerText = "Membaca Template & Menyusun Dokumen Laporan...";
   loader.classList.remove("hide");
 
-  // Menentukan Judul File Berdasarkan Keadaan Filter Aktif
   const filterBulan = document.getElementById("filter-bulan").value;
   const filterTahun = document.getElementById("filter-tahun").value;
   const searchQuery = document.getElementById("search-input").value.trim();
@@ -506,7 +501,6 @@ async function exportFilteredData() {
     fileName += " ALL PERIODE";
   }
 
-  // Siapkan paket payload yang dikirim ke backend Google Apps Script doPost()
   const payload = {
     action: "export_excel",
     fileName: fileName,
@@ -519,18 +513,24 @@ async function exportFilteredData() {
 
   fetch(API_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "text/plain" }, // Menggunakan plain text untuk menghindari preflight CORS
+    headers: { "Content-Type": "text/plain" },
     body: JSON.stringify(payload)
   })
   .then(res => res.json())
   .then(res => {
     loader.classList.add("hide");
-    loaderText.innerText = "Memproses Sinkronisasi Data Ke Server..."; // Kembalikan ke default teks
+    loaderText.innerText = "Memproses Sinkronisasi Data Ke Server..."; 
     
     if (res.success && res.downloadUrl) {
       showToast("Laporan Excel Berhasil Dibuat!", "success");
-      // Buka URL download yang dihasilkan oleh server Google Script secara otomatis
-      window.open(res.downloadUrl, "_blank");
+      
+      // Evaluasi Poin 4: Menggunakan Direct Download murni lewat HTML Anchor Element virtual (Mencegah Pop-up Blocker)
+      const uniqueAnchor = document.createElement("a");
+      uniqueAnchor.href = res.downloadUrl;
+      uniqueAnchor.setAttribute("download", fileName + ".xlsx");
+      document.body.appendChild(uniqueAnchor);
+      uniqueAnchor.click(); // Trigger eksekusi stream download instan ke komputer lokal
+      document.body.removeChild(uniqueAnchor);
     } else {
       showToast("Gagal melakukan export: " + res.message, "error");
     }
