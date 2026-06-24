@@ -145,9 +145,9 @@ function generateForms(count) {
         </div>
 
         <div style="margin-top: 15px; background: #fff3cd; border: 1px dashed var(--gold); border-radius: 6px; padding: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
-  <span style="font-size: 13px; font-weight: 700; color: #856404; min-width: 200px;"><i class="fa-solid fa-calculator"></i> Total Durasi Terhitung otomatis:</span>
-  <input type="text" id="live-durasi-${i}" readonly value="0 Jam 0 Menit" style="width: auto; max-width: 100%; text-align: right; background: transparent; border: none; font-size: 16px; font-weight: 800; color: var(--navy); pointer-events: none;">
-</div>
+          <span style="font-size: 13px; font-weight: 700; color: #856404; min-width: 200px;"><i class="fa-solid fa-calculator"></i> Total Durasi Terhitung otomatis:</span>
+          <input type="text" id="live-durasi-${i}" readonly value="0 Jam 0 Menit" style="width: auto; max-width: 100%; text-align: right; background: transparent; border: none; font-size: 16px; font-weight: 800; color: var(--navy); pointer-events: none;">
+        </div>
       </div>
 
       <div class="sub-section-group" style="background: rgba(11, 31, 58, 0.03); padding: 15px; border-radius: 8px; border-left: 4px solid var(--navy);">
@@ -328,7 +328,7 @@ function loadDataGrid() {
       globalAllRecords = res.records || [];
       globalFilteredRecords = [...globalAllRecords];
 
-      // Update Statistik Dasbor
+      // Update Statistik Dasbor Pertama Kali (Default)
       document.getElementById("stat-total").innerText = res.stats.total;
       document.getElementById("stat-dn").innerText = res.stats.dn;
       document.getElementById("stat-ln").innerText = res.stats.ln;
@@ -342,12 +342,13 @@ function loadDataGrid() {
     });
 }
 
-// Mesin Pencari dan Penyaring Multi-Kombinasi Realtime (Tanpa Tombol)
+// Mesin Pencari dan Penyaring Multi-Kombinasi Realtime + Rekalkulasi Statistik Otomatis Dinamis
 function triggerSearchFilter() {
   const searchQuery = document.getElementById("search-input").value.toLowerCase().trim();
   const filterBulan = document.getElementById("filter-bulan").value;
   const filterTahun = document.getElementById("filter-tahun").value;
 
+  // 1. Jalankan Penapisan Array Data Utama
   globalFilteredRecords = globalAllRecords.filter((r) => {
     if (filterBulan && String(r["BULAN"]).toUpperCase() !== filterBulan.toUpperCase()) return false;
     if (filterTahun && String(r["TAHUN"]).trim() !== filterTahun.trim()) return false;
@@ -365,6 +366,26 @@ function triggerSearchFilter() {
     return true;
   });
 
+  // 2. HITUNG ULANG STATISTIK BERDASARKAN HASIL FILTER SECARA DINAMIS
+  let totalDinamis = globalFilteredRecords.length;
+  let dnDinamis = globalFilteredRecords.filter(r => r["DAERAH PELAYARAN"] === "Dalam Negeri").length;
+  let lnDinamis = globalFilteredRecords.filter(r => r["DAERAH PELAYARAN"] === "Luar Negeri").length;
+  
+  let totalJamDinamis = 0;
+  globalFilteredRecords.forEach(r => {
+    let match = String(r["TOTAL JAM"]).match(/(\d+)\s*Jam/);
+    if (match) {
+      totalJamDinamis += parseInt(match[1], 10);
+    }
+  });
+
+  // 3. SUNTIKKAN ANGKA BARU KE ELEMEN DASHBOARD SECARA REAL-TIME
+  document.getElementById("stat-total").innerText = totalDinamis;
+  document.getElementById("stat-dn").innerText = dnDinamis;
+  document.getElementById("stat-ln").innerText = lnDinamis;
+  document.getElementById("stat-jam").innerText = totalJamDinamis + " Jam";
+
+  // 4. Render Ulang Tabel dan Kembalikan ke Halaman 1
   currentPage = 1;
   renderTableData();
 }
@@ -394,7 +415,6 @@ function renderTableData() {
       billCell = `<span style="color:#e67e22; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> ${r["KODE BILLING"]}</span>`;
     }
 
-    // Perbaikan Tanggal ISO: Menggunakan .split('T')[0] agar format waktu dunia yang aneh dipotong bersih menjadi YYYY-MM-DD
     const tglMulaiBersih = String(r["TANGGAL MULAI TAMBAT"]).includes('T') ? String(r["TANGGAL MULAI TAMBAT"]).split('T')[0] : r["TANGGAL MULAI TAMBAT"];
     const tglSelesaiBersih = String(r["TANGGAL SELESAI TAMBAT"]).includes('T') ? String(r["TANGGAL SELESAI TAMBAT"]).split('T')[0] : r["TANGGAL SELESAI TAMBAT"];
 
