@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Pemantauan Tambat Kapal - KSOP Kelas II Pekanbaru</title>
+    <!-- Font Awesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Eksternal Stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- LOADING SCREEN GLOBAL (GLASSMORPHISM LIGHT) -->
+    <div id="global-loader" class="loader-container hide">
+      <div class="spinner"></div>
+      <p id="loader-text">Memproses Sinkronisasi Data Ke Server...</p>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- NAVBAR (PREMIUM CORPORATE STYLE) -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <i class="fa-solid style-gold fa-ship"></i>
+        <div>
+          <span class="title">KSOP KELAS II PEKANBARU</span>
+          <span class="subtitle">Sistem Pemantauan Tambat Kapal</span>
+        </div>
+      </div>
+      <ul class="nav-links">
+        <li
+          class="nav-item active"
+          id="nav-input"
+          onclick="switchMenu('input-panel', this)"
+        >
+          <i class="fa-solid fa-file-invoice"></i> INPUT
+        </li>
+        <li
+          class="nav-item"
+          id="nav-monitoring"
+          onclick="
+            switchMenu('monitoring-panel', this);
+            loadDataGrid();
+          "
+        >
+          <i class="fa-solid fa-chart-line"></i> MONITORING
+        </li>
+      </ul>
+    </nav>
+
+    <!-- UTAMA / MAIN CONTENT -->
+    <main class="main-content">
+      <!-- ==================== PANEL INPUT ==================== -->
+      <section id="input-panel" class="tab-panel active-panel">
+        <div class="panel-header">
+          <h2>
+            <i class="fa-solid fa-square-plus text-navy"></i> Formulir Entry Log
+            Tambat Kapal
+          </h2>
+          <div class="multi-selector">
+            <label for="form-count">Jumlah Data Input:</label>
+            <select id="form-count" onchange="generateForms(this.value)">
+              <option value="1">1 Data</option>
+              <option value="2">2 Data</option>
+              <option value="3">3 Data</option>
+              <option value="4">4 Data</option>
+              <option value="5">5 Data</option>
+              <option value="6">6 Data</option>
+              <option value="7">7 Data</option>
+              <option value="8">8 Data</option>
+              <option value="9">9 Data</option>
+              <option value="10">10 Data</option>
+            </select>
+          </div>
+        </div>
+
+        <form id="master-tambat-form" onsubmit="submitFormData(event)">
+          <div id="dynamic-form-wrapper">
+            <!-- Form dinamis akan disuntikkan secara otomatis oleh code.js -->
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Save
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ==================== PANEL MONITORING ==================== -->
+      <section id="monitoring-panel" class="tab-panel">
+        <!-- DASHBOARD STATISTIK CARDS -->
+        <div class="dashboard-grid">
+          <div class="card card-premium">
+            <div class="card-icon bg-navy">
+              <i class="fa-solid fa-anchor"></i>
+            </div>
+            <div class="card-info">
+              <h3 id="stat-total">0</h3>
+              <p>Total Kapal Tambat</p>
+            </div>
+          </div>
+          <div class="card card-premium">
+            <div class="card-icon bg-success">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <div class="card-info">
+              <h3 id="stat-dn">0</h3>
+              <p>Tambat Dalam Negeri</p>
+            </div>
+          </div>
+          <div class="card card-premium">
+            <div class="card-icon bg-danger">
+              <i class="fa-solid fa-globe"></i>
+            </div>
+            <div class="card-info">
+              <h3 id="stat-ln">0</h3>
+              <p>Tambat Luar Negeri</p>
+            </div>
+          </div>
+          <div class="card card-premium">
+            <div class="card-icon bg-gold">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div class="card-info">
+              <h3 id="stat-jam">0 Jam</h3>
+              <p>Total Jam Tambat Bulan Ini</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILTER & SEARCH CONTROL ENGINE -->
+        <div class="control-box table-card glassmorphism">
+          <div class="search-engine">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Ketik untuk mencari Nama Kapal, GT, Agen, Posisi..."
+              oninput="triggerSearchFilter()"
+            />
+          </div>
+          <div class="filter-engine">
+            <select id="filter-bulan" onchange="triggerSearchFilter()">
+              <option value="">-- Semua Bulan --</option>
+              <option value="JANUARI">Januari</option>
+              <option value="FEBRUARI">Februari</option>
+              <option value="MARET">Maret</option>
+              <option value="APRIL">April</option>
+              <option value="MEI">Mei</option>
+              <option value="JUNI">Juni</option>
+              <option value="JULI">Juli</option>
+              <option value="AGUSTUS">Agustus</option>
+              <option value="SEPTEMBER">September</option>
+              <option value="OKTOBER">Oktober</option>
+              <option value="NOVEMBER">November</option>
+              <option value="DESEMBER">Desember</option>
+            </select>
+            <select id="filter-tahun" onchange="triggerSearchFilter()">
+              <option value="">-- Semua Tahun --</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+            <!-- BUTTON EXPORT BERBASIS FILTER AKTIF -->
+            <button type="button" class="btn btn-success" id="btn-export" onclick="exportFilteredData()">
+              <i class="fa-solid fa-file-excel"></i> Export Excel Report
+            </button>
+          </div>
+        </div>
+
+        <!-- DATA TABLE MONITORING CONTAINER -->
+        <div class="table-card glassmorphism table-container">
+          <table id="monitoring-table">
+            <thead>
+              <tr>
+                <th>ID DATA</th>
+                <th>NAMA KAPAL</th>
+                <th>GT</th>
+                <th>BENDERA</th>
+                <th>KEAGENAN</th>
+                <th>PELAYARAN</th>
+                <th>WAKTU MULAI</th>
+                <th>PARAF</th>
+                <th>WAKTU SELESAI</th>
+                <th>PARAF</th>
+                <th>POSISI</th>
+                <th>TOTAL WAKTU</th>
+                <th>BILLING</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Skeleton Loading atau baris data riil akan di-inject di sini oleh code.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CONTROLLER PAGINATION -->
+        <div class="pagination-container" id="pagination-box">
+          <!-- Navigasi tombol halaman dibentuk via javascript -->
+        </div>
+      </section>
+    </main>
+
+    <!-- CUSTOM CONFIRM DIALOG MODAL -->
+    <div id="confirm-modal" class="custom-modal hide">
+      <div class="modal-box">
+        <h3>
+          <i class="fa-solid fa-circle-question text-gold"></i> Konfirmasi
+          Tindakan
+        </h3>
+        <p id="confirm-modal-msg">
+          Apakah Anda yakin ingin mengeksekusi proses penyimpanan ini?
+        </p>
+        <div class="modal-buttons">
+          <button
+            type="button"
+            class="btn id-btn-cancel"
+            onclick="closeConfirmModal(false)"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            onclick="closeConfirmModal(true)"
+          >
+            Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eksternal Javascript Logic -->
+    <script src="code.js"></script>
+  </body>
+</html>
