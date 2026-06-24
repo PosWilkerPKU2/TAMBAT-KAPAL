@@ -220,7 +220,7 @@ function showToast(message, type = "success") {
   }, 4000);
 }
 
-// Submit Data Menggunakan Fetch API - Perbaikan untuk Aliran Masuk Data Google Sheets
+// Submit Data Menggunakan Fetch API (Cross-Origin Resource Sharing)
 async function submitFormData(e) {
   e.preventDefault();
 
@@ -269,7 +269,6 @@ async function submitFormData(e) {
     });
   }
 
-  // Menggunakan text/plain agar data JSON utuh terbaca oleh doPost(e) di server Apps Script
   fetch(API_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -350,7 +349,6 @@ function triggerSearchFilter() {
   const filterTahun = document.getElementById("filter-tahun").value;
 
   globalFilteredRecords = globalAllRecords.filter((r) => {
-    // Evaluasi Poin 3: Pastikan tipe data dicast murni string (.toString().trim()) agar filter tahun 2026 berfungsi maksimal
     if (filterBulan && String(r["BULAN"]).toUpperCase() !== filterBulan.toUpperCase()) return false;
     if (filterTahun && String(r["TAHUN"]).trim() !== filterTahun.trim()) return false;
 
@@ -390,11 +388,16 @@ function renderTableData() {
     const tr = document.createElement("tr");
 
     let billCell = `<span style="color:#aaa;">Tidak Ada</span>`;
-    if (r["LINK FILE BILLING"]) {
+    if (r["LINK FILE BILLING"] && !String(r["LINK FILE BILLING"]).includes("Terarsip")) {
       billCell = `<a href="${r["LINK FILE BILLING"]}" target="_blank" class="bill-link"><i class="fa-solid fa-file-pdf text-danger"></i> ${r["KODE BILLING"]}</a>`;
+    } else if (r["KODE BILLING"]) {
+      billCell = `<span style="color:#e67e22; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> ${r["KODE BILLING"]}</span>`;
     }
 
-    // Evaluasi Poin 1 & 2: Pemanggilan properti jam bersih dari petik murni server, dan merubah pemanggilan total jam dari r["TOTAL JAM"]
+    // Perbaikan Tanggal ISO: Menggunakan .split('T')[0] agar format waktu dunia yang aneh dipotong bersih menjadi YYYY-MM-DD
+    const tglMulaiBersih = String(r["TANGGAL MULAI TAMBAT"]).includes('T') ? String(r["TANGGAL MULAI TAMBAT"]).split('T')[0] : r["TANGGAL MULAI TAMBAT"];
+    const tglSelesaiBersih = String(r["TANGGAL SELESAI TAMBAT"]).includes('T') ? String(r["TANGGAL SELESAI TAMBAT"]).split('T')[0] : r["TANGGAL SELESAI TAMBAT"];
+
     tr.innerHTML = `
       <td style="font-weight:700; color:var(--navy);">${r["ID"].split("-")[1] || r["ID"]}</td>
       <td style="font-weight:600; color:var(--navy);">${r["NAMA KAPAL"]}</td>
@@ -402,9 +405,9 @@ function renderTableData() {
       <td>${r["BENDERA"]}</td>
       <td>${r["KEAGENAN"]}</td>
       <td><span style="padding:4px 8px; border-radius:4px; color:white; font-size:11px; background:${r["DAERAH PELAYARAN"] === "Luar Negeri" ? "#ff4757" : "#2ed573"}">${r["DAERAH PELAYARAN"]}</span></td>
-      <td>${r["TANGGAL MULAI TAMBAT"]}<br><small style="color:#777">${String(r["JAM MULAI TAMBAT"]).replace("'", "")}</small></td>
+      <td>${tglMulaiBersih}<br><small style="color:#777">${String(r["JAM MULAI TAMBAT"]).replace("'", "")}</small></td>
       <td style="font-weight:700; color:${r["PARAF MULAI"] === "YA" ? "#2ed573" : "#ff4757"}">${r["PARAF MULAI"]}</td>
-      <td>${r["TANGGAL SELESAI TAMBAT"]}<br><small style="color:#777">${String(r["JAM SELESAI TAMBAT"]).replace("'", "")}</small></td>
+      <td>${tglSelesaiBersih}<br><small style="color:#777">${String(r["JAM SELESAI TAMBAT"]).replace("'", "")}</small></td>
       <td style="font-weight:700; color:${r["PARAF SELESAI"] === "YA" ? "#2ed573" : "#ff4757"}">${r["PARAF SELESAI"]}</td>
       <td><strong>${r["POSISI"]}</strong></td>
       <td style="color:var(--navy); font-weight:700;">${r["TOTAL JAM"]}</td>
@@ -424,7 +427,6 @@ function renderPaginationControls() {
   const totalPages = Math.ceil(globalFilteredRecords.length / itemsPerPage);
   if (totalPages <= 1) return;
 
-  // Tombol Halaman Sebelumnya (Prev)
   const prevBtn = document.createElement("button");
   prevBtn.className = `page-btn ${currentPage === 1 ? "hide" : ""}`;
   prevBtn.innerText = "Prev";
@@ -436,7 +438,6 @@ function renderPaginationControls() {
   };
   pBox.appendChild(prevBtn);
 
-  // Mekanisme batasan angka halaman panjang (...)
   for (let i = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
@@ -459,7 +460,6 @@ function renderPaginationControls() {
     }
   }
 
-  // Tombol Halaman Selanjutnya (Next)
   const nextBtn = document.createElement("button");
   nextBtn.className = `page-btn ${currentPage === totalPages ? "hide" : ""}`;
   nextBtn.innerText = "Next";
@@ -474,7 +474,6 @@ function renderPaginationControls() {
 
 /**
  * CORE EXPORT ENGINE: Memproses data terfilter dan mendownload file Excel
- * Berdasarkan penamaan dinamis sesuai filter/pencarian aktif harian
  */
 async function exportFilteredData() {
   if (globalFilteredRecords.length === 0) {
@@ -529,12 +528,11 @@ async function exportFilteredData() {
     if (res.success && res.downloadUrl) {
       showToast("Laporan Excel Berhasil Dibuat!", "success");
       
-      // Evaluasi Poin 4: Menggunakan Direct Download murni lewat HTML Anchor Element virtual (Mencegah Pop-up Blocker)
       const uniqueAnchor = document.createElement("a");
       uniqueAnchor.href = res.downloadUrl;
       uniqueAnchor.setAttribute("download", fileName + ".xlsx");
       document.body.appendChild(uniqueAnchor);
-      uniqueAnchor.click(); // Trigger eksekusi stream download instan ke komputer lokal
+      uniqueAnchor.click(); 
       document.body.removeChild(uniqueAnchor);
     } else {
       showToast("Gagal melakukan export: " + res.message, "error");
