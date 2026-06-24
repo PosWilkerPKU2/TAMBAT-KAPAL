@@ -144,10 +144,10 @@ function generateForms(count) {
 
         </div>
 
-        <div style="margin-top: 15px; background: #fff3cd; border: 1px dashed var(--gold); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 13px; font-weight: 700; color: #856404;"><i class="fa-solid fa-calculator"></i> Total Durasi Terhitung otomatis:</span>
-          <input type="text" id="live-durasi-${i}" readonly value="0 Jam 0 Menit" style="width: auto; text-align: right; background: transparent; border: none; font-size: 16px; font-weight: 800; color: var(--navy); pointer-events: none;">
-        </div>
+        <div style="margin-top: 15px; background: #fff3cd; border: 1px dashed var(--gold); border-radius: 6px; padding: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+  <span style="font-size: 13px; font-weight: 700; color: #856404; min-width: 200px;"><i class="fa-solid fa-calculator"></i> Total Durasi Terhitung otomatis:</span>
+  <input type="text" id="live-durasi-${i}" readonly value="0 Jam 0 Menit" style="width: auto; max-width: 100%; text-align: right; background: transparent; border: none; font-size: 16px; font-weight: 800; color: var(--navy); pointer-events: none;">
+</div>
       </div>
 
       <div class="sub-section-group" style="background: rgba(11, 31, 58, 0.03); padding: 15px; border-radius: 8px; border-left: 4px solid var(--navy);">
