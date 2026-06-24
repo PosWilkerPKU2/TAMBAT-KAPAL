@@ -220,7 +220,7 @@ function showToast(message, type = "success") {
   }, 4000);
 }
 
-// Submit Data Menggunakan Fetch API (Cross-Origin Resource Sharing)
+// Submit Data Menggunakan Fetch API - Perbaikan untuk Aliran Masuk Data Google Sheets
 async function submitFormData(e) {
   e.preventDefault();
 
@@ -269,22 +269,27 @@ async function submitFormData(e) {
     });
   }
 
-  // Pengiriman lintas domain (CORS) menggunakan mode "no-cors" untuk Apps Script POST
+  // Menggunakan text/plain agar data JSON utuh terbaca oleh doPost(e) di server Apps Script
   fetch(API_ENDPOINT, {
     method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payloadArray),
   })
-    .then(() => {
+    .then(res => res.json())
+    .then((res) => {
       loader.classList.add("hide");
-      showToast("Data Tambat Kapal Berhasil Disimpan ke Server!", "success");
-      document.getElementById("master-tambat-form").reset();
-      generateForms(1); // Reset kembali ke 1 form input
+      if (res.success) {
+        showToast("Data Tambat Kapal Berhasil Disimpan ke Server & Google Sheets!", "success");
+        document.getElementById("master-tambat-form").reset();
+        generateForms(1); // Reset kembali ke 1 form input
+        loadDataGrid();   // Otomatis refresh data grid monitoring
+      } else {
+        showToast("Gagal mengarsip data: " + res.message, "error");
+      }
     })
     .catch((err) => {
       loader.classList.add("hide");
-      showToast("Gagal menyimpan data: " + err, "error");
+      showToast("Gagal menyambung ke server: " + err, "error");
     });
 }
 
