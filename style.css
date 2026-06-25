@@ -14,6 +14,13 @@
   --danger-light: rgba(255, 71, 87, 0.05);
   --excel-green: #217346;
   --excel-green-hover: #185a35;
+  
+  /* Palette Tambahan Revisi Status */
+  --status-lunas-bg: #2ed573;
+  --status-lunas-shadow: rgba(46, 213, 115, 0.25);
+  --status-belum-bg: #ff4757;
+  --status-belum-shadow: rgba(255, 71, 87, 0.25);
+  --amber-edit: #ff9f43;
 }
 
 * {
@@ -198,6 +205,15 @@ body {
   border-color: var(--navy);
   box-shadow: 0 0 0 3px rgba(11, 31, 58, 0.1);
 }
+.form-block input:disabled,
+.form-block select:disabled,
+.form-block textarea:disabled {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed;
+  border-color: #cbd5e1;
+}
+
 /* Style khusus untuk placeholder */
 ::placeholder {
   font-style: italic; /* Italic Placeholder */
@@ -275,6 +291,28 @@ body {
   margin-top: 20px;
 }
 
+/* ==================== REVISI POIN 3: WARNA STATUS BADGE BILLING ==================== */
+.badge-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.badge-lunas {
+  background-color: var(--status-lunas-bg);
+  color: var(--white);
+  box-shadow: 0 4px 10px var(--status-lunas-shadow);
+}
+.badge-belum-bayar {
+  background-color: var(--status-belum-bg);
+  color: var(--white);
+  box-shadow: 0 4px 10px var(--status-belum-shadow);
+}
+
 /* ==================== BUTTONS ==================== */
 .btn {
   padding: 12px 25px;
@@ -298,6 +336,13 @@ body {
   background-color: #12315a;
   transform: translateY(-1px);
 }
+.btn-primary:disabled {
+  background-color: #64748b !important;
+  border-bottom: 3px solid #cbd5e1 !important;
+  cursor: not-allowed;
+  transform: none !important;
+  opacity: 0.6;
+}
 .btn-success {
   background-color: var(--excel-green);
   color: var(--white);
@@ -306,6 +351,20 @@ body {
 .btn-success:hover {
   background-color: var(--excel-green-hover);
   transform: translateY(-1px);
+}
+.btn-edit-pen {
+  background-color: var(--amber-edit);
+  color: var(--white);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.btn-edit-pen:hover {
+  background-color: #e67e22;
+  transform: scale(1.05);
 }
 
 /* ==================== CONTROL & TABLES ==================== */
@@ -454,7 +513,8 @@ tr:hover {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
   z-index: 900;
   display: flex;
   justify-content: center;
@@ -463,10 +523,10 @@ tr:hover {
 .modal-box {
   background: var(--white);
   padding: 30px;
-  border-radius: 8px;
+  border-radius: 12px;
   max-width: 450px;
   width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.3s ease;
 }
 .modal-box h3 {
@@ -486,8 +546,11 @@ tr:hover {
   gap: 10px;
 }
 .id-btn-cancel {
-  background-color: #e0e0e0;
-  color: #333;
+  background-color: #e2e8f0;
+  color: #334155;
+}
+.id-btn-cancel:hover {
+  background-color: #cbd5e1;
 }
 .hide {
   display: none !important;
@@ -573,9 +636,11 @@ tr:hover {
   .form-grid-3 {
     grid-template-columns: repeat(1, 1fr);
   }
+  /* Paksa form perhitungan waktu tambat pecah baris di tablet & HP */
+  .sub-section-group div[style*="display: grid; grid-template-columns: 1fr 1fr"],
   .sub-section-group div[style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
-    gap: 15px !important;
+    gap: 20px !important;
   }
 }
 
@@ -589,6 +654,7 @@ tr:hover {
   .nav-links {
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
   }
   .panel-header {
     flex-direction: column;
