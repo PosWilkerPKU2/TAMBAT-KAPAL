@@ -514,20 +514,12 @@ tr:hover {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px); /* Blur standar untuk modal edit billing */
+  backdrop-filter: blur(4px); /* Blur standar untuk modal edit */
   -webkit-backdrop-filter: blur(4px);
-  z-index: 900; /* Layer untuk modal edit */
+  z-index: 900; /* Layer standar untuk modal edit */
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-/* FIX POIN: Memaksa Popup Konfirmasi berada di baris paling depan (Top Layer) */
-#confirm-modal {
-  z-index: 2500 !important; /* Melompat jauh ke depan mengalahkan modal edit */
-  background: rgba(11, 31, 58, 0.5) !important; /* Latar belakang navy transparan */
-  backdrop-filter: blur(8px) !important; /* Efek latar belakang belakangnya dibuat lebih blur */
-  -webkit-backdrop-filter: blur(8px) !important;
 }
 .modal-box {
   background: var(--white);
@@ -563,6 +555,14 @@ tr:hover {
 }
 .hide {
   display: none !important;
+}
+
+/* REVISI PREMIUM: Memaksa Popup Konfirmasi berada di baris paling depan mengalahkan modal edit */
+#confirm-modal {
+  z-index: 2500 !important; 
+  background: rgba(11, 31, 58, 0.5) !important; 
+  backdrop-filter: blur(8px) !important; /* Efek blur pekat khusus latar belakang konfirmasi */
+  -webkit-backdrop-filter: blur(8px) !important;
 }
 
 /* ==================== TOAST NOTIFICATION ==================== */
