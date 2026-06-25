@@ -1,7 +1,7 @@
 /**
  * Frontend Logic (code.js) - GitHub Deployment Version
  * Pemantauan Tambat Kapal - KSOP Kelas II Pekanbaru
- * * UI/UX Versi Terpisah, Kontras Tinggi, Multi-Form Zebra Striping, & Direct Download Engine [Evaluasi Terpadu V3]
+ * * Integrasi Fitur Manajemen Billing Susulan & Dashboard Tagihan Piutang Kapal [V5-Premium]
  */
 
 // !!! GANTI URL INI DENGAN WEB APP URL HASIL DEPLOY APPS SCRIPT ANDA !!!
@@ -9,6 +9,7 @@ const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxsALtRcejJv95zu5O
 
 let globalAllRecords = [];
 let globalFilteredRecords = [];
+let globalTagihanRecords = []; // Wadah penampung data piutang khusus belum bayar
 let currentPage = 1;
 const itemsPerPage = 15;
 let pendingConfirmPromise = null;
@@ -19,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadDataGrid();
 });
 
-// Sistem Navigasi Tab Menu (Input vs Monitoring)
+// Sistem Navigasi Tab Menu (Input vs Monitoring vs Tagihan)
 function switchMenu(panelId, element) {
   document
     .querySelectorAll(".tab-panel")
@@ -151,14 +152,14 @@ function generateForms(count) {
       </div>
 
       <div class="sub-section-group" style="background: rgba(11, 31, 58, 0.03); padding: 15px; border-radius: 8px; border-left: 4px solid var(--navy);">
-        <h4 style="color: var(--navy); margin-bottom: 15px; font-size: 14px; border-bottom: 2px solid #ddd; padding-bottom: 5px;"><i class="fa-solid fa-money-check-dollar"></i> III. ADMINISTRASI KEUANGAN & BUKTI BILLING</h4>
+        <h4 style="color: var(--navy); margin-bottom: 15px; font-size: 14px; border-bottom: 2px solid #ddd; padding-bottom: 5px;"><i class="fa-solid fa-money-check-dollar"></i> III. ADMINISTRASI KEUANGAN & BUKTI BILLING (OPSIONAL)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div class="form-block">
-            <label>Kode Billing Pelabuhan *</label>
-            <input type="text" class="inp-billing" required placeholder="Contoh: BILL001">
+            <label>Kode Billing Pelabuhan (Kosongkan jika belum bayar)</label>
+            <input type="text" class="inp-billing" placeholder="CONTOH: BILL001">
             
-            <label style="margin-top: 10px;">Upload Dokumen Bukti Billing (PDF / JPG / PNG) *</label>
-            <input type="file" class="inp-file" required accept=".pdf,.jpg,.jpeg,.png" style="background:#fff; padding:6px;">
+            <label style="margin-top: 10px;">Upload Dokumen Bukti Billing (PDF / JPG / PNG)</label>
+            <input type="file" class="inp-file" accept=".pdf,.jpg,.jpeg,.png" style="background:#fff; padding:6px;">
           </div>
           <div class="form-block">
             <label>Keterangan Tambat Tambahan</label>
@@ -314,7 +315,7 @@ function loadDataGrid() {
 
   // Suntik Skeleton Loading
   for (let i = 0; i < 5; i++) {
-    tbody.innerHTML += `<tr class="skeleton-row">${"<td></td>".repeat(13)}</tr>`;
+    tbody.innerHTML += `<tr class="skeleton-row">${"<td></td>".repeat(14)}</tr>`;
   }
 
   fetch(API_ENDPOINT)
@@ -327,6 +328,12 @@ function loadDataGrid() {
 
       globalAllRecords = res.records || [];
       globalFilteredRecords = [...globalAllRecords];
+
+      // Sinkronisasi Data Piutang Otomatis untuk Panel Menu Tagihan
+      globalTagihanRecords = globalAllRecords.filter(r => {
+        const stat = r["STATUS BAYAR"] ? String(r["STATUS BAYAR"]).toUpperCase().trim() : "BELUM BAYAR";
+        return stat === "BELUM BAYAR";
+      });
 
       // Update Statistik Dasbor Pertama Kali (Default)
       document.getElementById("stat-total").innerText = res.stats.total;
@@ -342,14 +349,16 @@ function loadDataGrid() {
     });
 }
 
-// Mesin Pencari dan Penyaring Multi-Kombinasi Realtime + Rekalkulasi Statistik Otomatis Dinamis
+// REVISI POIN 4: Pencarian Realtime Terintegrasi Filter Status Bayar Lunas/Belum
 function triggerSearchFilter() {
   const searchQuery = document.getElementById("search-input").value.toLowerCase().trim();
   const filterBulan = document.getElementById("filter-bulan").value;
   const filterTahun = document.getElementById("filter-tahun").value;
+  const filterStatus = document.getElementById("filter-status-bayar").value;
 
-  // 1. Jalankan Penapisan Array Data Utama
   globalFilteredRecords = globalAllRecords.filter((r) => {
+    // Jalankan filter status pembayaran
+    if (filterStatus && String(r["STATUS BAYAR"]).toUpperCase().trim() !== filterStatus.toUpperCase()) return false;
     if (filterBulan && String(r["BULAN"]).toUpperCase() !== filterBulan.toUpperCase()) return false;
     if (filterTahun && String(r["TAHUN"]).trim() !== filterTahun.trim()) return false;
 
@@ -366,7 +375,7 @@ function triggerSearchFilter() {
     return true;
   });
 
-  // 2. HITUNG ULANG STATISTIK BERDASARKAN HASIL FILTER SECARA DINAMIS
+  // REKALKULASI STATISTIK SECARA REAKTIF MENGIKUTI FILTER
   let totalDinamis = globalFilteredRecords.length;
   let dnDinamis = globalFilteredRecords.filter(r => r["DAERAH PELAYARAN"] === "Dalam Negeri").length;
   let lnDinamis = globalFilteredRecords.filter(r => r["DAERAH PELAYARAN"] === "Luar Negeri").length;
@@ -379,13 +388,11 @@ function triggerSearchFilter() {
     }
   });
 
-  // 3. SUNTIKKAN ANGKA BARU KE ELEMEN DASHBOARD SECARA REAL-TIME
   document.getElementById("stat-total").innerText = totalDinamis;
   document.getElementById("stat-dn").innerText = dnDinamis;
   document.getElementById("stat-ln").innerText = lnDinamis;
   document.getElementById("stat-jam").innerText = totalJamDinamis + " Jam";
 
-  // 4. Render Ulang Tabel dan Kembalikan ke Halaman 1
   currentPage = 1;
   renderTableData();
 }
@@ -396,7 +403,7 @@ function renderTableData() {
   tbody.innerHTML = "";
 
   if (globalFilteredRecords.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:30px; font-weight:600; color:#999;">Tidak ada log data tambat kapal yang sesuai kriteria.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; padding:30px; font-weight:600; color:#999;">Tidak ada log data tambat kapal yang sesuai kriteria.</td></tr>`;
     document.getElementById("pagination-box").innerHTML = "";
     return;
   }
@@ -408,16 +415,22 @@ function renderTableData() {
   pageItems.forEach((r) => {
     const tr = document.createElement("tr");
 
-    let billCell = `<span style="color:#aaa;">Tidak Ada</span>`;
-    if (r["LINK FILE BILLING"] && !String(r["LINK FILE BILLING"]).includes("Terarsip")) {
-      billCell = `<a href="${r["LINK FILE BILLING"]}" target="_blank" class="bill-link"><i class="fa-solid fa-file-pdf text-danger"></i> ${r["KODE BILLING"]}</a>`;
-    } else if (r["KODE BILLING"]) {
-      billCell = `<span style="color:#e67e22; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> ${r["KODE BILLING"]}</span>`;
+    // REVISI POIN 3: Visualisasi Badge Kontras Tinggi Lunas vs Belum Bayar
+    let billCell = "";
+    const statusMurni = r["STATUS BAYAR"] ? String(r["STATUS BAYAR"]).toUpperCase().trim() : "BELUM BAYAR";
+
+    if (statusMurni === "LUNAS" && r["LINK FILE BILLING"] && !String(r["LINK FILE BILLING"]).includes("Terarsip")) {
+      billCell = `<a href="${r["LINK FILE BILLING"]}" target="_blank" class="badge-status badge-lunas"><i class="fa-solid fa-file-pdf"></i> ${r["KODE BILLING"]}</a>`;
+    } else if (statusMurni === "LUNAS") {
+      billCell = `<span class="badge-status badge-lunas"><i class="fa-solid fa-check"></i> ${r["KODE BILLING"] || "LUNAS"}</span>`;
+    } else {
+      billCell = `<span class="badge-status badge-belum-bayar"><i class="fa-solid fa-circle-exclamation"></i> Belum Bayar</span>`;
     }
 
     const tglMulaiBersih = String(r["TANGGAL MULAI TAMBAT"]).includes('T') ? String(r["TANGGAL MULAI TAMBAT"]).split('T')[0] : r["TANGGAL MULAI TAMBAT"];
     const tglSelesaiBersih = String(r["TANGGAL SELESAI TAMBAT"]).includes('T') ? String(r["TANGGAL SELESAI TAMBAT"]).split('T')[0] : r["TANGGAL SELESAI TAMBAT"];
 
+    // REVISI POIN 2: Menambahkan tombol aksi pena edit khusus billing
     tr.innerHTML = `
       <td style="font-weight:700; color:var(--navy);">${r["ID"].split("-")[1] || r["ID"]}</td>
       <td style="font-weight:600; color:var(--navy);">${r["NAMA KAPAL"]}</td>
@@ -432,6 +445,11 @@ function renderTableData() {
       <td><strong>${r["POSISI"]}</strong></td>
       <td style="color:var(--navy); font-weight:700;">${r["TOTAL JAM"]}</td>
       <td>${billCell}</td>
+      <td style="text-align:center;">
+        <button class="btn-edit-pen" onclick="openEditBillingModal('${r["ID"]}')" title="Update Billing Susulan">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -490,6 +508,160 @@ function renderPaginationControls() {
     }
   };
   pBox.appendChild(nextBtn);
+}
+
+// REVISI POIN 5: Mesin Pencari dan Penyaring Khusus Menu Tagihan Piutang Kapal
+function triggerTagihanSearchFilter() {
+  const searchQuery = document.getElementById("tagihan-search-input").value.toLowerCase().trim();
+  const filterBulan = document.getElementById("tagihan-filter-bulan").value;
+  const filterTahun = document.getElementById("tagihan-filter-tahun").value;
+
+  const baseTagihan = globalAllRecords.filter(r => {
+    const stat = r["STATUS BAYAR"] ? String(r["STATUS BAYAR"]).toUpperCase().trim() : "BELUM BAYAR";
+    return stat === "BELUM BAYAR";
+  });
+
+  const filteredTagihan = baseTagihan.filter((r) => {
+    if (filterBulan && String(r["BULAN"]).toUpperCase() !== filterBulan.toUpperCase()) return false;
+    if (filterTahun && String(r["TAHUN"]).trim() !== filterTahun.trim()) return false;
+
+    if (searchQuery) {
+      return (
+        String(r["NAMA KAPAL"]).toLowerCase().includes(searchQuery) ||
+        String(r["KEAGENAN"]).toLowerCase().includes(searchQuery) ||
+        String(r["KODE BILLING"]).toLowerCase().includes(searchQuery)
+      );
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById("tagihan-table-body");
+  tbody.innerHTML = "";
+
+  if (filteredTagihan.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:25px; font-weight:600; color:#db4437;"><i class="fa-solid fa-circle-check"></i> Luar Biasa! Tidak ada tunggakan billings pada periode ini.</td></tr>`;
+    return;
+  }
+
+  filteredTagihan.forEach((r) => {
+    const tr = document.createElement("tr");
+    const tglMulaiBersih = String(r["TANGGAL MULAI TAMBAT"]).includes('T') ? String(r["TANGGAL MULAI TAMBAT"]).split('T')[0] : r["TANGGAL MULAI TAMBAT"];
+    const tglSelesaiBersih = String(r["TANGGAL SELESAI TAMBAT"]).includes('T') ? String(r["TANGGAL SELESAI TAMBAT"]).split('T')[0] : r["TANGGAL SELESAI TAMBAT"];
+
+    tr.innerHTML = `
+      <td style="font-weight:700; color:var(--navy);">${r["ID"].split("-")[1] || r["ID"]}</td>
+      <td style="font-weight:600; color:var(--navy);">${r["NAMA KAPAL"]}</td>
+      <td>${r["GT"]}</td>
+      <td>${r["KEAGENAN"]}</td>
+      <td>${tglMulaiBersih} <small>${String(r["JAM MULAI TAMBAT"]).replace("'", "")}</small></td>
+      <td>${tglSelesaiBersih} <small>${String(r["JAM SELESAI TAMBAT"]).replace("'", "")}</small></td>
+      <td style="font-weight:700; color:var(--navy);">${r["TOTAL JAM"]}</td>
+      <td><strong>${r["POSISI"]}</strong></td>
+      <td><span class="badge-status badge-belum-bayar">TERHUTANG</span></td>
+      <td style="text-align:center;">
+        <button class="btn-edit-pen" onclick="openEditBillingModal('${r["ID"]}')" title="Bayar Billing">
+          <i class="fa-solid fa-money-bill-wave"></i> Bayar
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// REVISI POIN 2: Logika Buka Tutup & Kunci Form Popup Modal Edit Billing
+function openEditBillingModal(id) {
+  const targetRecord = globalAllRecords.find(r => String(r["ID"]).trim() === String(id).trim());
+  if (!targetRecord) {
+    showToast("Gagal memetakan rekam data kapal.", "error");
+    return;
+  }
+
+  // Isi data identitas profil rekam terikat
+  document.getElementById("edit-id-target").value = targetRecord["ID"];
+  document.getElementById("lbl-edit-nama").innerText = targetRecord["NAMA KAPAL"];
+  document.getElementById("lbl-edit-gt").innerText = targetRecord["GT"] + " GT";
+  document.getElementById("lbl-edit-keagenan").innerText = targetRecord["KEAGENAN"];
+  document.getElementById("lbl-edit-durasi").innerText = targetRecord["TOTAL JAM"];
+
+  // Reset kondisi input menjadi terkunci bawaan
+  document.getElementById("chk-konfirmasi-edit").checked = false;
+  toggleBillingEditFields(false);
+
+  // Suntik isian data jika sebelumnya pernah ada
+  document.getElementById("edit-inp-billing").value = targetRecord["KODE BILLING"] || "";
+  document.getElementById("edit-inp-file").value = "";
+
+  document.getElementById("edit-billing-modal").classList.remove("hide");
+}
+
+function closeEditBillingModal() {
+  document.getElementById("edit-billing-modal").classList.add("hide");
+}
+
+function toggleBillingEditFields(unlocked) {
+  document.getElementById("edit-inp-billing").disabled = !unlocked;
+  document.getElementById("edit-inp-file").disabled = !unlocked;
+  document.getElementById("btn-submit-edit").disabled = !unlocked;
+}
+
+// REVISI POIN 2: Pengiriman Berkas Enkripsi Susulan via POST REST API (update_billing)
+async function submitEditBillingData(e) {
+  e.preventDefault();
+
+  const idTarget = document.getElementById("edit-id-target").value;
+  const billingInp = document.getElementById("edit-inp-billing").value.toUpperCase().trim();
+  const fileInput = document.getElementById("edit-inp-file").files[0];
+
+  if (billingInp === "") {
+    showToast("Kode Billing pelabuhan wajib diisi!", "error");
+    return;
+  }
+
+  const konfirmasi = await openConfirmModal("Apakah Anda yakin ingin menyimpan pembaruan berkas administrasi keuangan ini ke database pusat?");
+  if (!konfirmasi) return;
+
+  closeEditBillingModal();
+  const loader = document.getElementById("global-loader");
+  loader.classList.remove("hide");
+
+  let fileObj = { fileData: null, fileName: null, fileType: null };
+  if (fileInput) {
+    fileObj = await convertFileToBase64(fileInput);
+  }
+
+  const payload = {
+    action: "update_billing",
+    id: idTarget,
+    kodeBilling: billingInp,
+    fileData: fileObj.fileData,
+    fileName: fileObj.fileName,
+    fileType: fileObj.fileType
+  };
+
+  fetch(API_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then((res) => {
+      loader.classList.add("hide");
+      if (res.success) {
+        showToast("Administrasi Billing Kapal Berhasil Diperbarui!", "success");
+        loadDataGrid(); // Refresh database grid monitoring dan tagihan otomatis
+        
+        // Cek jika panel tagihan sedang aktif, paksa render ulang baris piutang
+        if (document.getElementById("tagihan-panel").classList.contains("active-panel")) {
+          setTimeout(() => { triggerTagihanSearchFilter(); }, 800);
+        }
+      } else {
+        showToast("Gagal menyimpan pembaruan: " + res.message, "error");
+      }
+    })
+    .catch((err) => {
+      loader.classList.add("hide");
+      showToast("Gagal tersambung ke server: " + err, "error");
+    });
 }
 
 /**
