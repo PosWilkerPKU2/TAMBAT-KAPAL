@@ -4,26 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistem Pemantauan Tambat Kapal - KSOP Kelas II Pekanbaru</title>
-    <!-- Font Awesome Icons -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link href="logo-pw.png" rel="icon" />
-    <!-- Eksternal Stylesheet -->
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- LOADING SCREEN GLOBAL (GLASSMORPHISM LIGHT) -->
     <div id="global-loader" class="loader-container hide">
       <div class="spinner"></div>
       <p id="loader-text">Memproses Sinkronisasi Data Ke Server...</p>
     </div>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- NAVBAR (PREMIUM CORPORATE STYLE) -->
     <nav class="navbar">
       <div class="nav-brand">
         <i class="fa-solid style-gold fa-ship"></i>
@@ -50,12 +45,20 @@
         >
           <i class="fa-solid fa-chart-line"></i> MONITORING
         </li>
+        <li
+          class="nav-item"
+          id="nav-tagihan"
+          onclick="
+            switchMenu('tagihan-panel', this);
+            triggerTagihanSearchFilter();
+          "
+        >
+          <i class="fa-solid fa-file-circle-exclamation"></i> TAGIHAN
+        </li>
       </ul>
     </nav>
 
-    <!-- UTAMA / MAIN CONTENT -->
     <main class="main-content">
-      <!-- ==================== PANEL INPUT ==================== -->
       <section id="input-panel" class="tab-panel active-panel">
         <div class="panel-header">
           <h2>
@@ -81,8 +84,7 @@
 
         <form id="master-tambat-form" onsubmit="submitFormData(event)">
           <div id="dynamic-form-wrapper">
-            <!-- Form dinamis akan disuntikkan secara otomatis oleh code.js -->
-          </div>
+            </div>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary">
               <i class="fa-solid fa-cloud-arrow-up"></i> Save
@@ -91,9 +93,7 @@
         </form>
       </section>
 
-      <!-- ==================== PANEL MONITORING ==================== -->
       <section id="monitoring-panel" class="tab-panel">
-        <!-- DASHBOARD STATISTIK CARDS -->
         <div class="dashboard-grid">
           <div class="card card-premium">
             <div class="card-icon bg-navy">
@@ -133,7 +133,6 @@
           </div>
         </div>
 
-        <!-- FILTER & SEARCH CONTROL ENGINE -->
         <div class="control-box table-card glassmorphism">
           <div class="search-engine">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -145,6 +144,11 @@
             />
           </div>
           <div class="filter-engine">
+            <select id="filter-status-bayar" onchange="triggerSearchFilter()">
+              <option value="">Tampilkan Semua Status</option>
+              <option value="LUNAS">Sudah Bayar (Lunas)</option>
+              <option value="BELUM BAYAR">Belum Bayar</option>
+            </select>
             <select id="filter-bulan" onchange="triggerSearchFilter()">
               <option value="">-- Semua Bulan --</option>
               <option value="JANUARI">Januari</option>
@@ -166,14 +170,12 @@
               <option value="2027">2027</option>
               <option value="2028">2028</option>
             </select>
-            <!-- BUTTON EXPORT BERBASIS FILTER AKTIF -->
             <button type="button" class="btn btn-success" id="btn-export" onclick="exportFilteredData()">
               <i class="fa-solid fa-file-excel"></i> Export Excel Report
             </button>
           </div>
         </div>
 
-        <!-- DATA TABLE MONITORING CONTAINER -->
         <div class="table-card glassmorphism table-container">
           <table id="monitoring-table">
             <thead>
@@ -191,27 +193,87 @@
                 <th>POSISI</th>
                 <th>TOTAL WAKTU</th>
                 <th>BILLING</th>
+                <th>AKSI</th>
               </tr>
             </thead>
             <tbody id="table-body">
-              <!-- Skeleton Loading atau baris data riil akan di-inject di sini oleh code.js -->
-            </tbody>
+              </tbody>
           </table>
         </div>
 
-        <!-- CONTROLLER PAGINATION -->
         <div class="pagination-container" id="pagination-box">
-          <!-- Navigasi tombol halaman dibentuk via javascript -->
+          </div>
+      </section>
+
+      <section id="tagihan-panel" class="tab-panel">
+        <div class="panel-header">
+          <h2>
+            <i class="fa-solid fa-file-invoice-dollar text-danger"></i> Daftar Piutang & Tagihan Billing Kapal
+          </h2>
+        </div>
+
+        <div class="control-box table-card glassmorphism">
+          <div class="search-engine">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              id="tagihan-search-input"
+              placeholder="Cari Agen atau Kapal yang belum melunasi billing..."
+              oninput="triggerTagihanSearchFilter()"
+            />
+          </div>
+          <div class="filter-engine">
+            <select id="tagihan-filter-bulan" onchange="triggerTagihanSearchFilter()">
+              <option value="">-- Semua Bulan --</option>
+              <option value="JANUARI">Januari</option>
+              <option value="FEBRUARI">Februari</option>
+              <option value="MARET">Maret</option>
+              <option value="APRIL">April</option>
+              <option value="MEI">Mei</option>
+              <option value="JUNI">Juni</option>
+              <option value="JULI">Juli</option>
+              <option value="AGUSTUS">Agustus</option>
+              <option value="SEPTEMBER">September</option>
+              <option value="OKTOBER">Oktober</option>
+              <option value="NOVEMBER">November</option>
+              <option value="DESEMBER">Desember</option>
+            </select>
+            <select id="tagihan-filter-tahun" onchange="triggerTagihanSearchFilter()">
+              <option value="">-- Semua Tahun --</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-card glassmorphism table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ID DATA</th>
+                <th>NAMA KAPAL</th>
+                <th>GT</th>
+                <th>KEAGENAN</th>
+                <th>WAKTU MULAI TAMBAT</th>
+                <th>WAKTU SELESAI TAMBAT</th>
+                <th>TOTAL DURASI</th>
+                <th>LOKASI TAMBAT</th>
+                <th>STATUS</th>
+                <th>AKSI</th>
+              </tr>
+            </thead>
+            <tbody id="tagihan-table-body">
+              </tbody>
+          </table>
         </div>
       </section>
     </main>
 
-    <!-- CUSTOM CONFIRM DIALOG MODAL -->
     <div id="confirm-modal" class="custom-modal hide">
       <div class="modal-box">
         <h3>
-          <i class="fa-solid fa-circle-question text-gold"></i> Konfirmasi
-          Tindakan
+          <i class="fa-solid fa-circle-question text-gold"></i> Konfirmasi Tindakan
         </h3>
         <p id="confirm-modal-msg">
           Apakah Anda yakin ingin mengeksekusi proses penyimpanan ini?
@@ -235,7 +297,47 @@
       </div>
     </div>
 
-    <!-- Eksternal Javascript Logic -->
+    <div id="edit-billing-modal" class="custom-modal hide">
+      <div class="modal-box" style="max-width: 600px; width:90%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--navy); padding-bottom:10px; margin-bottom:20px;">
+          <h3 style="margin:0; color:var(--navy);"><i class="fa-solid fa-file-pen"></i> Update Administrasi Billing Susulan</h3>
+          <i class="fa-solid fa-xmark" style="cursor:pointer; font-size:20px; color:#999;" onclick="closeEditBillingModal()"></i>
+        </div>
+        
+        <form id="form-edit-billing" onsubmit="submitEditBillingData(event)">
+          <input type="hidden" id="edit-id-target">
+          
+          <div style="background:#f1f5f9; padding:12px; border-radius:6px; margin-bottom:20px; border-left:4px solid var(--gold);">
+            <p style="margin:0 0 8px 0; font-size:12px; font-weight:bold; color:#666;"><i class="fa-solid fa-lock"></i> KARAKTERISTIK KAPAL OPERASIONAL (TERKUNCI)</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
+              <div>Nama Kapal: <strong id="lbl-edit-nama">-</strong></div>
+              <div>Gross Tonnage: <strong id="lbl-edit-gt">-</strong></div>
+              <div>Keagenan: <strong id="lbl-edit-keagenan">-</strong></div>
+              <div>Total Durasi: <strong id="lbl-edit-durasi">-</strong></div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px; background:rgba(212,175,55,0.1); padding:10px; border-radius:6px; display:flex; align-items:center; gap:10px; border:1px dashed var(--gold);">
+            <input type="checkbox" id="chk-konfirmasi-edit" onchange="toggleBillingEditFields(this.checked)" style="width:18px; height:18px; cursor:pointer;">
+            <label for="chk-konfirmasi-edit" style="font-size:13px; font-weight:700; color:#856404; cursor:pointer;">Saya konfirmasi ingin membuka fitur edit berkas billing</label>
+          </div>
+
+          <div class="form-block">
+            <label style="font-weight:bold; color:var(--navy);">Kode Billing Pelabuhan *</label>
+            <input type="text" id="edit-inp-billing" required disabled placeholder="Contoh: BILL001" style="margin-bottom:15px; text-transform: uppercase;">
+            
+            <label style="font-weight:bold; color:var(--navy);">Upload Dokumen Bukti Billing (PDF / JPG / PNG) *</label>
+            <input type="file" id="edit-inp-file" required disabled accept=".pdf,.jpg,.jpeg,.png" style="background:#fff; padding:6px; border:1px solid #ccc; width:100%;">
+          </div>
+
+          <div class="modal-buttons" style="margin-top:25px; border-top:1px solid #eee; padding-top:15px;">
+            <button type="button" class="btn id-btn-cancel" onclick="closeEditBillingModal()">Tutup</button>
+            <button type="submit" id="btn-submit-edit" class="btn btn-primary" disabled><i class="fa-solid fa-floppy-disk"></i> Simpan Billing</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="code.js"></script>
   </body>
 </html>
