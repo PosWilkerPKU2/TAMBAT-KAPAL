@@ -514,11 +514,20 @@ tr:hover {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
-  z-index: 900;
+  backdrop-filter: blur(4px); /* Blur standar untuk modal edit billing */
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 900; /* Layer untuk modal edit */
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* FIX POIN: Memaksa Popup Konfirmasi berada di baris paling depan (Top Layer) */
+#confirm-modal {
+  z-index: 2500 !important; /* Melompat jauh ke depan mengalahkan modal edit */
+  background: rgba(11, 31, 58, 0.5) !important; /* Latar belakang navy transparan */
+  backdrop-filter: blur(8px) !important; /* Efek latar belakang belakangnya dibuat lebih blur */
+  -webkit-backdrop-filter: blur(8px) !important;
 }
 .modal-box {
   background: var(--white);
